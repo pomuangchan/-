@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แผนที่จาก Google Sheet</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1976d2;
+      color: white;
+      padding: 1rem 2rem;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo img {
+      height: 40px;
+    }
+
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    select, button {
+      font-size: 1rem;
+      padding: 0.4rem 0.7rem;
+      border-radius: 4px;
+      border: none;
+    }
+
+    .dropdown-menu {
+      position: relative;
+    }
+
+    .dropdown-toggle {
+      font-size: 1rem;
+      padding: 0.45rem 1rem;
+      background-color: #ffffff;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .dropdown-toggle:hover {
+      background-color: #f2f2f2;
+    }
+
+    #typeCheckboxes {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 2.8rem;
+      background: #fff;
+      color: #333;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+      min-width: 220px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      z-index: 9999;
+    }
+
+    #typeCheckboxes label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    #typeCheckboxes input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+
+    #map {
+      height: calc(100vh - 80px);
+      z-index: 1;
+    }
+
+    #summary-box {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 1100;
+      max-width: 250px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    #summary-box h4 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="https://drive.google.com/file/d/13Jx3-LlqbILlTzx3w0GpYCkVkWKyHmIT/view?usp=sharing" alt="โลโก้" />
+    <strong>ข้อมูลท้องถิ่น จังหวัดจันทบุรี</strong>
+  </div>
+  <div class="filters">
+    <div>
+      <label for="districtSelect">เลือกพื้นที่รับผิดชอบ : </label>
+      <select id="districtSelect" onchange="filterMarkers()">
+        <option value="สภ.เมืองจันทบุรี" selected>สภ.เมืองจันทบุรี</option>
+        <option value="สภ.นายายอาม">สภ.นายายอาม</option>
+        <option value="สภ.มะขาม">สภ.มะขาม</option>
+      </select>
+    </div>
+    <div class="dropdown-menu">
+      <button class="dropdown-toggle" onclick="toggleDropdown()">เลือกประเภท ▾</button>
+      <div id="typeCheckboxes">
+        <label><input type="checkbox" value="วัด" onchange="filterMarkers()"> วัด</label>
+        <label><input type="checkbox" value="โรงเรียน" onchange="filterMarkers()"> โรงเรียน</label>
+        <label><input type="checkbox" value="สถานพยาบาล" onchange="filterMarkers()"> สถานพยาบาล</label>
+        <label><input type="checkbox" value="ตลาด" onchange="filterMarkers()"> ตลาด</label>
+        <label><input type="checkbox" value="หน่วยงานรัฐ" onchange="filterMarkers()"> หน่วยงานรัฐ</label>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="map"></div>
+
+<div id="summary-box">
+  <h4>สรุปข้อมูล</h4>
+  <div id="summary-details">กำลังโหลดข้อมูล...</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Corrected JavaScript
+const map = L.map('map').setView([12.6, 102.1], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+
+let data = [];
+let markers = [];
+
+async function filterMarkers() {
+  if (data.length === 0) {
+    const res = await fetch('https://opensheet.elk.sh/1o6svjYLeX7ZltUmMiRYL7IbXfU9R60DZ-7Dy84PlgQY/การตอบแบบฟอร์ม%201');
+    data = await res.json();
+  }
+
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  const district = document.getElementById('districtSelect').value;
+  const selectedTypes = Array.from(document.querySelectorAll('#typeCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
+
+  const filtered = data.filter(d => {
+    const zone = d["เขตรับผิดชอบ"]?.trim();
+    const type = d["เลือกประเภทสถานที่"]?.trim();
+    return (!district || zone === district) && (selectedTypes.length === 0 || selectedTypes.includes(type));
+  });
+
+  const summary = {};
+
+  filtered.forEach(d => {
+    const lat = parseFloat(d["ละติจูด (Lat)"]);
+    const lng = parseFloat(d["ลองจิจูด (Lng)"]);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const marker = L.marker([lat, lng]).addTo(map).bindPopup(`<b>${d["ชื่อสถานที่"]}</b><br>ประเภท : ${d["เลือกประเภทสถานที่"]}<br>${d["เขตรับผิดชอบ"]}<br>เจ้าของ : ${d["เจ้าของร้าน"]}<br>เบอร์โทรศัพท์ : ${d["เบอร์โทรติดต่อ"]}`);
+      markers.push(marker);
+      summary[d["เลือกประเภทสถานที่"]] = (summary[d["เลือกประเภทสถานที่"]] || 0) + 1;
+    }
+  });
+
+  document.getElementById('summary-details').innerHTML = Object.entries(summary).map(([type, count]) => `${type}: ${count}`).join('<br>');
+}
+
+function toggleDropdown() {
+  const box = document.getElementById("typeCheckboxes");
+  box.style.display = box.style.display === "block" ? "none" : "block";
+}
+
+window.onload = filterMarkers;
+</script>
+</body>
+</html>
