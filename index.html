@@ -119,7 +119,7 @@
 
 <header>
   <div class="logo">
-    <img src="https://drive.google.com/file/d/13Jx3-LlqbILlTzx3w0GpYCkVkWKyHmIT/view?usp=sharing" alt="โลโก้" />
+    <!--img src="" alt="โลโก้" -->
     <strong>ข้อมูลท้องถิ่น จังหวัดจันทบุรี</strong>
   </div>
   <div class="filters">
@@ -127,18 +127,34 @@
       <label for="districtSelect">เลือกพื้นที่รับผิดชอบ : </label>
       <select id="districtSelect" onchange="filterMarkers()">
         <option value="สภ.เมืองจันทบุรี" selected>สภ.เมืองจันทบุรี</option>
-        <option value="สภ.นายายอาม">สภ.นายายอาม</option>
+        <option value="สภ.ท่าใหม่">สภ.ท่าใหม่</option>
+        <option value="สภ.ขลุง">สภ.ขลุง</option>
         <option value="สภ.มะขาม">สภ.มะขาม</option>
+        <option value="สภ.ตกพรม">สภ.ตกพรม</option>
+        <option value="สภ.สะตอน">สภ.สะตอน</option>
+        <option value="สภ.สอยดาว">สภ.สอยดาว</option>
+        <option value="สภ.เกาะเปริด">สภ.เกาะเปริด</option>
+        <option value="สภ.ทุ่งเบญจา">สภ.ทุ่งเบญจา</option>
+        <option value="สภ.บ้านแปลง">สภ.บ้านแปลง</option>
+        <option value="สภ.แหลมสิงห์">สภ.แหลมสิงห์</option>
+        <option value="สภ.นายายอาม">สภ.นายายอาม</option>
+        <option value="สภ.โปร่งน้ำร้อน">สภ.โปร่งน้ำร้อน</option>
+        <option value="สภ.เขาคิชฌกูช">สภ.เขาคิชฌกูช</option>
+        <option value="สภ.แก่งหางแมว">สภ.แก่งหางแมว</option>
+        
       </select>
     </div>
     <div class="dropdown-menu">
       <button class="dropdown-toggle" onclick="toggleDropdown()">เลือกประเภท ▾</button>
       <div id="typeCheckboxes">
-        <label><input type="checkbox" value="วัด" onchange="filterMarkers()"> วัด</label>
-        <label><input type="checkbox" value="โรงเรียน" onchange="filterMarkers()"> โรงเรียน</label>
+        <label><input type="checkbox" value="ธนาคาร" onchange="filterMarkers()"> ธนาคาร</label>
+        <label><input type="checkbox" value="ร้านทอง" onchange="filterMarkers()"> ร้านทอง</label>
+        <label><input type="checkbox" value="ปั้มน้ำมัน" onchange="filterMarkers()"> ปั้มน้ำมัน</label>
+        <label><input type="checkbox" value="ศาสนสถาน" onchange="filterMarkers()"> ศาสนสถาน</label>
+        <label><input type="checkbox" value="สถานศึกษา" onchange="filterMarkers()"> สถานศึกษา</label>
         <label><input type="checkbox" value="สถานพยาบาล" onchange="filterMarkers()"> สถานพยาบาล</label>
-        <label><input type="checkbox" value="ตลาด" onchange="filterMarkers()"> ตลาด</label>
-        <label><input type="checkbox" value="หน่วยงานรัฐ" onchange="filterMarkers()"> หน่วยงานรัฐ</label>
+        <label><input type="checkbox" value="ห้างสรรพสินค้า" onchange="filterMarkers()"> ห้างสรรพสินค้า</label>
+        <label><input type="checkbox" value="ผับ บาร์ คาราโอเกะ" onchange="filterMarkers()"> ผับ บาร์ คาราโอเกะ</label>
       </div>
     </div>
   </div>
@@ -162,7 +178,7 @@ let markers = [];
 
 async function filterMarkers() {
   if (data.length === 0) {
-    const res = await fetch('https://opensheet.elk.sh/1o6svjYLeX7ZltUmMiRYL7IbXfU9R60DZ-7Dy84PlgQY/การตอบแบบฟอร์ม%201');
+    const res = await fetch('https://opensheet.elk.sh/1GZyEZj-BbNbks5zBUftHVzhigeP--1upaztwmiTSU6E/การตอบแบบฟอร์ม%201');
     data = await res.json();
   }
 
@@ -173,7 +189,7 @@ async function filterMarkers() {
   const selectedTypes = Array.from(document.querySelectorAll('#typeCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value);
 
   const filtered = data.filter(d => {
-    const zone = d["เขตรับผิดชอบ"]?.trim();
+    const zone = d["พื้นที่เขตรับผิดชอบ"]?.trim();
     const type = d["เลือกประเภทสถานที่"]?.trim();
     return (!district || zone === district) && (selectedTypes.length === 0 || selectedTypes.includes(type));
   });
@@ -184,7 +200,7 @@ async function filterMarkers() {
     const lat = parseFloat(d["ละติจูด (Lat)"]);
     const lng = parseFloat(d["ลองจิจูด (Lng)"]);
     if (!isNaN(lat) && !isNaN(lng)) {
-      const marker = L.marker([lat, lng]).addTo(map).bindPopup(`<b>${d["ชื่อสถานที่"]}</b><br>ประเภท : ${d["เลือกประเภทสถานที่"]}<br>${d["เขตรับผิดชอบ"]}<br>เจ้าของ : ${d["เจ้าของร้าน"]}<br>เบอร์โทรศัพท์ : ${d["เบอร์โทรติดต่อ"]}`);
+      const marker = L.marker([lat, lng]).addTo(map).bindPopup(`<b>${d["ชื่อสถานที่"]}</b><br>ประเภท : ${d["เลือกประเภทสถานที่"]}<br>${d["พื้นที่เขตรับผิดชอบ"]}<br>เจ้าของ : ${d["เจ้าของสถานที่"]}<br>เบอร์โทรศัพท์ : ${d["เบอร์ติดต่อเจ้าของสถานที่"]}`);
       markers.push(marker);
       summary[d["เลือกประเภทสถานที่"]] = (summary[d["เลือกประเภทสถานที่"]] || 0) + 1;
     }
